@@ -13,12 +13,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.github.lateralthoughts.domain.Rabbit;
+import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.Date;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -141,6 +146,92 @@ public class HomeController {
         } catch (Exception e) {
             System.out.println("Exception:" + e.getLocalizedMessage());
             return new Rabbit();
+        }
+    }
+
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
+    @ResponseStatus(HttpStatus.CREATED)
+    String create(@RequestBody String rabbitEntry) {
+        return createRabbit(rabbitEntry);
+    }
+
+    @RequestMapping(value = "/rabbit/{name}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    String delete(@PathVariable("name") String name) {
+        return deleteRabbit(name);
+    }
+
+    @RequestMapping(value = "/rabbit/{name}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    String findByName(@PathVariable("name") String name) {
+
+        return findRabbitByName(name);
+    }
+
+    @RequestMapping(value = "/rabbit/{name}", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    String update(@RequestBody String rabbit) {
+
+        String updated = updateRabbit(rabbit);
+        return updated;
+    }
+
+    private String createRabbit(String rabbitStr) {
+        Gson gson = new Gson();
+        try {
+            String insertSql = "INSERT INTO Rabbits (name, color, age, photo)  VALUES(?,?,?,?);";
+
+            Rabbit rabbit = gson.fromJson(rabbitStr, Rabbit.class);
+            //String name = ;
+            //String color = rabbit.getColor();
+
+            new JdbcTemplate(dataSource).update(insertSql, new Object[]{rabbit.getName(), rabbit.getColor(), rabbit.getAge(), rabbit.getPhoto()});
+            return rabbitStr;
+
+        } catch (Exception e) {
+            System.out.println("Exception:" + e.getLocalizedMessage());
+            //TODO:Error class
+            return "{\"status\":\"error\"}";
+        }
+    }
+
+    private String deleteRabbit(String rabbitName) {
+        try {
+
+            String sql = "DELETE FROM rabbits WHERE name LIKE '" + rabbitName + "'";
+            Gson gson = new Gson();
+
+            new JdbcTemplate(dataSource).update(sql);
+            return "{\"status\":\"success\"}";
+
+        } catch (Exception e) {
+            System.out.println("Exception:" + e.getLocalizedMessage());
+            return "{\"status\":\"error\"}";
+        }
+    }
+
+    private String findRabbitByName(String name) {
+        Gson gson = new Gson();
+        Rabbit rabbit = getRabbit(name);
+        return gson.toJson(rabbit);
+    }
+
+    private String updateRabbit(String rabbitStr) {
+        Gson gson = new Gson();
+        try {
+            String sql = "UPDATE Rabbits SET color=?, age=?, photo=? WHERE name LIKE (?)";
+
+            Rabbit rabbit = gson.fromJson(rabbitStr, Rabbit.class);
+            //String name = ;
+            //String color = rabbit.getColor();
+
+            new JdbcTemplate(dataSource).update(sql, new Object[]{rabbit.getColor(), rabbit.getAge(), rabbit.getPhoto(), rabbit.getName()});
+            return rabbitStr;
+
+        } catch (Exception e) {
+            System.out.println("Exception:" + e.getLocalizedMessage());
+            //TODO:Error class
+            return "{\"status\":\"error\"}";
         }
     }
 
