@@ -1,7 +1,7 @@
 package com.github.lateralthoughts.domain;
 
 public class Rabbit {
-
+    public static final Integer RABBIT_ENERGY = 100;
     private String name;
     private String color;
     private String age;
